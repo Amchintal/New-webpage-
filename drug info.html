@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+<head>
+    <title>Drug Information App</title>
+    
+    <!-- Link to the manifest.json file -->
+    <link rel="manifest" href="manifest.json">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+        .container {
+            margin-top: 50px;
+        }
+        input[type="text"] {
+            width: 50%;
+            padding: 10px;
+            margin: 10px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .result {
+            margin-top: 20px;
+        }
+        img {
+            max-width: 300px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Drug Information App</h1>
+        <p>Enter the drug name to get details:</p>
+        <input type="text" id="drugName" placeholder="Enter drug name here">
+        <button onclick="getDrugInfo()">Get Info</button>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        function getDrugInfo() {
+            var drugName = document.getElementById("drugName").value.trim();
+
+            if (drugName) {
+                document.getElementById("result").innerHTML = "Fetching information for: " + drugName;
+                
+                // Fetch drug information from PubChem API
+                fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${drugName}/property/MolecularFormula,MolecularWeight/JSON`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.PropertyTable && data.PropertyTable.Properties.length > 0) {
+                        var properties = data.PropertyTable.Properties[0];
+
+                        // Fetch molecular structure image
+                        fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${drugName}/PNG`)
+                        .then(response => response.blob())
+                        .then(blob => {
+                            var img = URL.createObjectURL(blob);
+                            document.getElementById("result").innerHTML = `
+                                <h3>Results for: ${drugName}</h3>
+                                <p><strong>Molecular Formula:</strong> ${properties.MolecularFormula}</p>
+                                <p><strong>Molecular Weight:</strong> ${properties.MolecularWeight}</p>
+                                <img src="${img}" alt="Molecular Structure">
+                            `;
+                        })
+                        .catch(error => {
+                            document.getElementById("result").innerHTML = "Error fetching structure.";
+                            console.error(error);
+                        });
+                    } else {
+                        document.getElementById("result").innerHTML = "No data found for this drug.";
+                    }
+                })
+                .catch(error => {
+                    document.getElementById("result").innerHTML = "Error fetching data.";
+                    console.error(error);
+                });
+            } else {
+                document.getElementById("result").innerHTML = "Please enter a drug name.";
+            }
+        }
+    </script>
+
+</body></html>
